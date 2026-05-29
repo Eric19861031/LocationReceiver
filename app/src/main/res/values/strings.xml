@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">位置接收器</string>
-    <!-- ⚠️ 请将下方替换为你的百度地图 AK，申请地址: https://lbsyun.baidu.com -->
-    <string name="baidu_ak">YOUR_BAIDU_AK_HERE</string>
+    <string name="baidu_ak">4gSwX98r1pbfXrtoHU81vhrALqP1W36u</string>
 </resources>
