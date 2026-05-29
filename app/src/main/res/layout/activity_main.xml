@@ -80,4 +80,46 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
+    <!-- 底部操作栏 -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:background="#1a1a2e"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp">
+
+        <ProgressBar
+            android:id="@+id/progressBar"
+            style="?android:attr/progressBarStyleSmall"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_marginEnd="10dp"
+            android:visibility="gone"
+            android:indeterminateTint="#4CAF50" />
+
+        <TextView
+            android:id="@+id/tvLocatingHint"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text=""
+            android:textColor="#AAAAAA"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <Button
+            android:id="@+id/btnGetLocation"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:text="获取发送器位置"
+            android:textColor="#FFFFFF"
+            android:textSize="14sp"
+            android:backgroundTint="#E53935"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp" />
+
+    </LinearLayout>
+
 </LinearLayout>
