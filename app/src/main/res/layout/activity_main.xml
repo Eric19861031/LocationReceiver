@@ -73,8 +73,8 @@
 
     </LinearLayout>
 
-    <!-- 地图 -->
-    <org.osmdroid.views.MapView
+    <!-- 百度地图 WebView -->
+    <WebView
         android:id="@+id/mapView"
         android:layout_width="match_parent"
         android:layout_height="0dp"

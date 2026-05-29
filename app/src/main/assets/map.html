@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+  <title>百度地图</title>
+  <style>
+    html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #1a1a2e; }
+    #no-fix {
+      position: absolute; top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.65); color: #fff;
+      padding: 18px 28px; border-radius: 12px;
+      font: 14px/1.8 sans-serif; text-align: center;
+      pointer-events: none; z-index: 999;
+    }
+    #err {
+      display: none; position: absolute; top: 0; left: 0;
+      width: 100%; height: 100%; background: #1a1a2e;
+      color: #fff; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: sans-serif; text-align: center; padding: 24px; box-sizing: border-box;
+    }
+    #err p { margin: 6px 0; }
+    #err .title { font-size: 20px; }
+    #err .sub   { font-size: 13px; color: #aaa; }
+    #err .tip   { font-size: 12px; color: #666; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+  <div id="no-fix">📡 等待位置数据...</div>
+  <div id="err">
+    <p class="title">⚠️ 地图加载失败</p>
+    <p class="sub">请在 res/values/strings.xml 中替换百度地图 AK</p>
+    <p class="tip">申请地址：lbsyun.baidu.com → 控制台 → 创建应用（浏览器端）</p>
+  </div>
+
+  <script>
+    var map, marker, firstFix = false;
+
+    /* ── 地图初始化（由百度 SDK 回调） ── */
+    var _akTimer = setTimeout(function () {
+      if (!map) { document.getElementById('err').style.display = 'flex'; document.getElementById('no-fix').style.display = 'none'; }
+    }, 12000);
+
+    function initMap() {
+      clearTimeout(_akTimer);
+      map = new BMap.Map('map', {enableMapClick: false});
+      map.centerAndZoom(new BMap.Point(116.404, 39.915), 5);
+      map.enableScrollWheelZoom(true);
+      map.addControl(new BMap.ZoomControl({anchor: BMAP_ANCHOR_RIGHT_BOTTOM}));
+      map.addControl(new BMap.NavigationControl({anchor: BMAP_ANCHOR_RIGHT_BOTTOM, type: BMAP_NAVIGATION_CONTROL_SMALL}));
+    }
+
+    /* ── 由 Kotlin 调用，更新标记位置 ── */
+    function updateLocation(lat, lng, accuracy, timeStr) {
+      if (!map) return;
+      document.getElementById('no-fix').style.display = 'none';
+
+      var bd = wgs84ToBd09(+lat, +lng);
+      var pt = new BMap.Point(bd.lng, bd.lat);
+
+      if (!marker) {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 56">'
+          + '<path d="M20 0C9 0 0 9 0 20c0 15 20 36 20 36s20-21 20-36C40 9 31 0 20 0z" fill="#E53935"/>'
+          + '<circle cx="20" cy="20" r="9" fill="white"/>'
+          + '<circle cx="20" cy="20" r="5" fill="#E53935"/>'
+          + '</svg>';
+        var icon = new BMap.Icon(
+          'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+          new BMap.Size(40, 56),
+          {anchor: new BMap.Size(20, 56)}
+        );
+        marker = new BMap.Marker(pt, {icon: icon});
+        map.addOverlay(marker);
+      } else {
+        marker.setPosition(pt);
+      }
+
+      if (!firstFix) {
+        firstFix = true;
+        map.centerAndZoom(pt, 16);
+      } else {
+        map.panTo(pt);
+      }
+    }
+
+    /* ── 坐标转换：WGS84 → GCJ02 → BD09 ── */
+    var _PI = Math.PI, _a = 6378245.0, _ee = 0.00669342162296594323;
+
+    function wgs84ToBd09(lat, lng) {
+      var g = _wgs2gcj(lat, lng);
+      return _gcj2bd(g.lat, g.lng);
+    }
+    function _wgs2gcj(lat, lng) {
+      var dLat = _tLat(lng - 105, lat - 35), dLng = _tLng(lng - 105, lat - 35);
+      var r = lat / 180 * _PI, m = 1 - _ee * Math.pow(Math.sin(r), 2), s = Math.sqrt(m);
+      return { lat: lat + dLat * 180 / (_a * (1 - _ee) / (m * s) * _PI),
+               lng: lng + dLng * 180 / (_a / s * Math.cos(r) * _PI) };
+    }
+    function _gcj2bd(lat, lng) {
+      var xp = _PI * 3000 / 180;
+      var z = Math.sqrt(lng*lng + lat*lat) + 0.00002 * Math.sin(lat * xp);
+      var t = Math.atan2(lat, lng) + 0.000003 * Math.cos(lng * xp);
+      return { lat: z * Math.sin(t) + 0.006, lng: z * Math.cos(t) + 0.0065 };
+    }
+    function _tLat(lng, lat) {
+      var r = -100+2*lng+3*lat+0.2*lat*lat+0.1*lng*lat+0.2*Math.sqrt(Math.abs(lng));
+      r += (20*Math.sin(6*lng*_PI)+20*Math.sin(2*lng*_PI))*2/3;
+      r += (20*Math.sin(lat*_PI)+40*Math.sin(lat/3*_PI))*2/3;
+      r += (160*Math.sin(lat/12*_PI)+320*Math.sin(lat*_PI/30))*2/3;
+      return r;
+    }
+    function _tLng(lng, lat) {
+      var r = 300+lng+2*lat+0.1*lng*lng+0.1*lng*lat+0.1*Math.sqrt(Math.abs(lng));
+      r += (20*Math.sin(6*lng*_PI)+20*Math.sin(2*lng*_PI))*2/3;
+      r += (20*Math.sin(lng*_PI)+40*Math.sin(lng/3*_PI))*2/3;
+      r += (150*Math.sin(lng/12*_PI)+300*Math.sin(lng/30*_PI))*2/3;
+      return r;
+    }
+  </script>
+  <script src="https://api.map.baidu.com/api?v=3.0&ak=BAIDU_AK_PLACEHOLDER&callback=initMap"></script>
+</body>
+</html>
